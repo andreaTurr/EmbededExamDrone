@@ -1,0 +1,17 @@
+gyro.c:20:13:gyroSetTargetLooptime	2
+gyro.c:32:17:gyroSetSampleRate	1
+gyro.c:42:13:gyroInitSlewLimiter	2
+gyro.c:48:13:gyroInitSensorFilters	1
+gyro.c:53:13:gyroInitSensor	1
+gyro.c:79:17:calculateNyquistAdjustedNotchHz	3
+gyro.c:93:13:gyroInitLowpassFilterLpf	13
+gyro.c:164:13:gyroInitFilterNotch1	4
+gyro.c:179:13:gyroInitFilterNotch2	4
+gyro.c:194:13:gyroInitFilters	1
+gyro.c:216:6:gyroInit	2
+gyro.c:251:13:gyroUpdateSensor	2
+gyro.c:266:6:gyroUpdate	2
+gyro.c:287:6:gyroFilter	4
+gyro.c:315:6:gyroAccumulateMeasurements	2
+gyro.c:324:6:gyroGetAccumulationAverage	4
+gyro.c:343:6:gyroOverflowDetected	1

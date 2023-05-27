@@ -1,0 +1,12 @@
+main.c:76:5:main	1
+main.c:126:6:SystemClock_Config	4
+main.c:184:13:MX_USART3_UART_Init	2
+main.c:219:13:MX_USB_OTG_FS_PCD_Init	2
+main.c:254:13:MX_GPIO_Init	1
+main.c:337:13:sensorGyroInit	1
+main.c:339:13:sensorGyroRead	1
+main.c:346:13:sensorAccInit	1
+main.c:348:13:sensorAccRead	1
+main.c:355:13:sensorMagInit	1
+main.c:359:13:sensorMagRead	1
+main.c:374:6:Error_Handler	1

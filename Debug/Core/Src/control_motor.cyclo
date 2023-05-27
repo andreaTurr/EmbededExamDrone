@@ -1,0 +1,2 @@
+control_motor.c:11:6:controlMotorInit	1
+control_motor.c:15:6:controlMotorUpdate	1

@@ -1,0 +1,3 @@
+mag.c:38:13:compassDetect	6
+mag.c:86:6:magInit	3
+mag.c:110:6:magUpdate	4
