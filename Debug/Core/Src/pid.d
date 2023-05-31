@@ -1,9 +1,8 @@
 Core/Src/pid.o: ../Core/Src/pid.c ../Core/Inc/pid.h ../Core/Inc/bool.h \
- ../Core/Inc/flight_dynamics.h ../Core/Inc/timing.h ../Core/Inc/filter.h \
- ../Core/Inc/flight_dynamics.h ../Core/Inc/flight_control.h \
- ../Core/Inc/flight_math.h ../Core/Inc/reset.h ../Core/Inc/gyro.h \
- ../Core/Inc/sensor_align.h ../Core/Inc/flight_math.h ../Core/Inc/comm.h \
- ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h \
+ ../Core/Inc/filter.h ../Core/Inc/flight_dynamics.h ../Core/Inc/timing.h \
+ ../Core/Inc/flight_control.h ../Core/Inc/flight_math.h \
+ ../Core/Inc/gyro.h ../Core/Inc/sensor_align.h ../Core/Inc/flight_math.h \
+ ../Core/Inc/comm.h ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h \
  ../Core/Inc/stm32f7xx_hal_conf.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_rcc.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_def.h \
@@ -29,21 +28,22 @@ Core/Src/pid.o: ../Core/Src/pid.c ../Core/Inc/pid.h ../Core/Inc/bool.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_i2c_ex.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pwr.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pwr_ex.h \
+ ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h \
+ ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_usb.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd_ex.h \
- ../Core/Inc/basic_io.h ../Core/Inc/dev.h ../Core/Inc/rc.h
+ ../Core/Inc/basic_io.h ../Core/Inc/dev.h ../Core/Inc/rc.h \
+ ../Core/Inc/reset.h
 ../Core/Inc/pid.h:
 ../Core/Inc/bool.h:
-../Core/Inc/flight_dynamics.h:
-../Core/Inc/timing.h:
 ../Core/Inc/filter.h:
 ../Core/Inc/flight_dynamics.h:
+../Core/Inc/timing.h:
 ../Core/Inc/flight_control.h:
 ../Core/Inc/flight_math.h:
-../Core/Inc/reset.h:
 ../Core/Inc/gyro.h:
 ../Core/Inc/sensor_align.h:
 ../Core/Inc/flight_math.h:
@@ -74,6 +74,8 @@ Core/Src/pid.o: ../Core/Src/pid.c ../Core/Inc/pid.h ../Core/Inc/bool.h \
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_i2c_ex.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pwr.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pwr_ex.h:
+../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h:
+../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd.h:
@@ -82,3 +84,4 @@ Core/Src/pid.o: ../Core/Src/pid.c ../Core/Inc/pid.h ../Core/Inc/bool.h \
 ../Core/Inc/basic_io.h:
 ../Core/Inc/dev.h:
 ../Core/Inc/rc.h:
+../Core/Inc/reset.h:

@@ -24,5 +24,14 @@ C_DEPS :=
 SUBDIRS := \
 Core/Src \
 Core/Startup \
+Drivers/BSP/Components/hts221 \
+Drivers/BSP/Components/lps22hb \
+Drivers/BSP/Components/lsm303agr \
+Drivers/BSP/Components/lsm6dsl \
+Drivers/BSP/IKS01A2 \
 Drivers/STM32F7xx_HAL_Driver/Src \
+Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 \
+Middlewares/Third_Party/FreeRTOS/Source \
+Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1 \
+Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang \
 

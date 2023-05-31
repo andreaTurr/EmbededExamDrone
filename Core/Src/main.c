@@ -18,12 +18,18 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "sensors.h"
-#include "control_motor.h"
+#include "accel.h"
 #include "attitude.h"
+#include "baro.h"
+#include "control_motor.h"
+#include "gyro.h"
+#include "mag.h"
+#include "iks01a2_env_sensors.h"
+#include "iks01a2_motion_sensors.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -46,7 +52,88 @@ UART_HandleTypeDef huart3;
 
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
+/* Definitions for tControlMotor */
+osThreadId_t tControlMotorHandle;
+const osThreadAttr_t tControlMotor_attributes = {
+  .name = "tControlMotor",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal1,
+};
+/* Definitions for tAttitude */
+osThreadId_t tAttitudeHandle;
+const osThreadAttr_t tAttitude_attributes = {
+  .name = "tAttitude",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal2,
+};
+/* Definitions for tAltitude */
+osThreadId_t tAltitudeHandle;
+const osThreadAttr_t tAltitude_attributes = {
+  .name = "tAltitude",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal3,
+};
+/* Definitions for tGetAccLSM6DSL */
+osThreadId_t tGetAccLSM6DSLHandle;
+const osThreadAttr_t tGetAccLSM6DSL_attributes = {
+  .name = "tGetAccLSM6DSL",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for tGetAccLSM303AG */
+osThreadId_t tGetAccLSM303AGHandle;
+const osThreadAttr_t tGetAccLSM303AG_attributes = {
+  .name = "tGetAccLSM303AG",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for tGetGyrLSM6DSL */
+osThreadId_t tGetGyrLSM6DSLHandle;
+const osThreadAttr_t tGetGyrLSM6DSL_attributes = {
+  .name = "tGetGyrLSM6DSL",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for tGetMagnetLSM30 */
+osThreadId_t tGetMagnetLSM30Handle;
+const osThreadAttr_t tGetMagnetLSM30_attributes = {
+  .name = "tGetMagnetLSM30",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for tGetPressLPS22H */
+osThreadId_t tGetPressLPS22HHandle;
+const osThreadAttr_t tGetPressLPS22H_attributes = {
+  .name = "tGetPressLPS22H",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for tPrintUART */
+osThreadId_t tPrintUARTHandle;
+const osThreadAttr_t tPrintUART_attributes = {
+  .name = "tPrintUART",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for semPressure */
+osSemaphoreId_t semPressureHandle;
+const osSemaphoreAttr_t semPressure_attributes = {
+  .name = "semPressure"
+};
+/* Definitions for semAccLSM303AGR */
+osSemaphoreId_t semAccLSM303AGRHandle;
+const osSemaphoreAttr_t semAccLSM303AGR_attributes = {
+  .name = "semAccLSM303AGR"
+};
+/* Definitions for semAccLSM6DSL */
+osSemaphoreId_t semAccLSM6DSLHandle;
+const osSemaphoreAttr_t semAccLSM6DSL_attributes = {
+  .name = "semAccLSM6DSL"
+};
 /* USER CODE BEGIN PV */
+volatile float LPS22HB_Pressure;
+volatile IKS01A2_MOTION_SENSOR_Axes_t axesAcc_LSM303AG;
+volatile IKS01A2_MOTION_SENSOR_Axes_t axesAcc_LSM6DSL;
 
 /* USER CODE END PV */
 
@@ -55,13 +142,25 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
+void startTaskControlMotor(void *argument);
+void startTaskAttitude(void *argument);
+void startTaskAltitude(void *argument);
+void StartTaskGetAccLSM6DSL(void *argument);
+void StartTaskGetAccLSM303AGR(void *argument);
+void StartTaskGetGyrLSM6DSL(void *argument);
+void StartTaskGetMagnetLSM303AGR(void *argument);
+void StartTaskGetPressLPS22HB(void *argument);
+void StartTaskPrintUART(void *argument);
+
 /* USER CODE BEGIN PFP */
 static void sensorGyroInit(struct gyroDev_s *gyro);
 static bool sensorGyroRead(struct gyroDev_s *gyro);
 static void sensorAccInit(struct accDev_s *acc);
 static bool sensorAccRead(struct accDev_s *acc);
-static bool sensorMagInit(struct magDev_s *magdev);
-static bool sensorMagRead(struct magDev_s *magdev, int16_t *data);
+static void sensorMagInit(struct magDev_s *mag);
+static bool sensorMagRead(struct magDev_s *mag);
+static void sensorBaroInit(struct baroDev_s *baro);
+static bool sensorBaroRead(struct baroDev_s *baro);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -100,11 +199,103 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
   /* USER CODE BEGIN 2 */
-  sensorsInit(sensorGyroInit, sensorGyroRead, sensorAccInit, sensorAccRead, sensorMagInit, sensorMagRead);
+  /* initialization of control task */
+  gyroInit(sensorGyroInit, sensorGyroRead);
   controlMotorInit();
+
+  /* initialization of attitude task */
+  accInit(sensorAccInit, sensorAccRead);
+  magInit(sensorMagInit, sensorMagRead);
   attitudeInit();
+
+  /* initialization of altitude task */
+  baroInit(sensorBaroInit, sensorBaroRead);
+
+  /* initialization of sensors */
+  	  /* initialization of sensor LSM6DSL*/
+  IKS01A2_MOTION_SENSOR_Init(IKS01A2_LSM6DSL_0, MOTION_ACCELERO | MOTION_GYRO);
+  IKS01A2_MOTION_SENSOR_Enable(IKS01A2_LSM6DSL_0, MOTION_ACCELERO | MOTION_GYRO);
+
+  	  /* initialization of sensor LSM303AGR*/
+  IKS01A2_MOTION_SENSOR_Init(IKS01A2_LSM303AGR_ACC_0, MOTION_ACCELERO);
+  IKS01A2_MOTION_SENSOR_Init(IKS01A2_LSM303AGR_MAG_0, MOTION_MAGNETO);
+
+  IKS01A2_MOTION_SENSOR_Enable(IKS01A2_LSM303AGR_ACC_0, MOTION_ACCELERO);
+  IKS01A2_MOTION_SENSOR_Enable(IKS01A2_LSM303AGR_MAG_0, MOTION_MAGNETO);
+  	  /* initialization of pressure sensor LPS22HB*/
+  IKS01A2_ENV_SENSOR_Init(IKS01A2_LPS22HB_0, ENV_PRESSURE);
+  IKS01A2_ENV_SENSOR_Enable(IKS01A2_LPS22HB_0, ENV_PRESSURE);
+
   /* USER CODE END 2 */
 
+  /* Init scheduler */
+  osKernelInitialize();
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* Create the semaphores(s) */
+  /* creation of semPressure */
+  semPressureHandle = osSemaphoreNew(1, 1, &semPressure_attributes);
+
+  /* creation of semAccLSM303AGR */
+  semAccLSM303AGRHandle = osSemaphoreNew(1, 1, &semAccLSM303AGR_attributes);
+
+  /* creation of semAccLSM6DSL */
+  semAccLSM6DSLHandle = osSemaphoreNew(1, 1, &semAccLSM6DSL_attributes);
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* creation of tControlMotor */
+  tControlMotorHandle = osThreadNew(startTaskControlMotor, NULL, &tControlMotor_attributes);
+
+  /* creation of tAttitude */
+  tAttitudeHandle = osThreadNew(startTaskAttitude, NULL, &tAttitude_attributes);
+
+  /* creation of tAltitude */
+  tAltitudeHandle = osThreadNew(startTaskAltitude, NULL, &tAltitude_attributes);
+
+  /* creation of tGetAccLSM6DSL */
+  tGetAccLSM6DSLHandle = osThreadNew(StartTaskGetAccLSM6DSL, NULL, &tGetAccLSM6DSL_attributes);
+
+  /* creation of tGetAccLSM303AG */
+  tGetAccLSM303AGHandle = osThreadNew(StartTaskGetAccLSM303AGR, NULL, &tGetAccLSM303AG_attributes);
+
+  /* creation of tGetGyrLSM6DSL */
+  tGetGyrLSM6DSLHandle = osThreadNew(StartTaskGetGyrLSM6DSL, NULL, &tGetGyrLSM6DSL_attributes);
+
+  /* creation of tGetMagnetLSM30 */
+  tGetMagnetLSM30Handle = osThreadNew(StartTaskGetMagnetLSM303AGR, NULL, &tGetMagnetLSM30_attributes);
+
+  /* creation of tGetPressLPS22H */
+  tGetPressLPS22HHandle = osThreadNew(StartTaskGetPressLPS22HB, NULL, &tGetPressLPS22H_attributes);
+
+  /* creation of tPrintUART */
+  tPrintUARTHandle = osThreadNew(StartTaskPrintUART, NULL, &tPrintUART_attributes);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+  /* add events, ... */
+  /* USER CODE END RTOS_EVENTS */
+
+  /* Start scheduler */
+  osKernelStart();
+  /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -112,9 +303,22 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	sensorsUpdate();
-	controlMotorUpdate();
-	attitudeUpdate();
+	/*uint32_t start = HAL_GetTick();
+	for (int i = 0; i < 100000; ++i) {*/
+		/* first task: control */
+	    /*gyroUpdate();
+		controlMotorUpdate();*/
+
+		/* second task: attitude */
+		/*accUpdate();
+		magUpdate();
+		attitudeUpdate();*/
+
+		/* third task: altitude */
+		/*baroUpdate();
+	}*/
+	/*volatile uint32_t last = HAL_GetTick() - start;
+	Error_Handler();*/
   }
   /* USER CODE END 3 */
 }
@@ -337,35 +541,262 @@ static void MX_GPIO_Init(void)
 static void sensorGyroInit(struct gyroDev_s *gyro) { }
 
 static bool sensorGyroRead(struct gyroDev_s *gyro) {
-	gyro->gyroADCRaw[0] = 0;
-	gyro->gyroADCRaw[1] = -12345;
-	gyro->gyroADCRaw[2] = -28414;
+	gyro->gyroADC[0] = 0;
+	gyro->gyroADC[1] = -12345;
+	gyro->gyroADC[2] = -28414;
 	return true;
 }
 
 static void sensorAccInit(struct accDev_s *acc) { }
 
 static bool sensorAccRead(struct accDev_s *acc) {
-	acc->ADCRaw[0] = -4720;
-	acc->ADCRaw[1] = 5100;
-	acc->ADCRaw[2] = 9300;
+	IKS01A2_MOTION_SENSOR_Axes_t axes_LSM303AG;
+	IKS01A2_MOTION_SENSOR_Axes_t axes_LSM6DSL;
+
+	//LSM303AG sensor accelerometer
+	osSemaphoreAcquire(semAccLSM303AGRHandle, osWaitForever );
+	axes_LSM303AG = axesAcc_LSM303AG;
+	osSemaphoreRelease(semAccLSM303AGRHandle);
+	//LSM303AG sensor accelerometer
+	osSemaphoreAcquire(semAccLSM6DSLHandle, osWaitForever );
+	axes_LSM6DSL = axesAcc_LSM6DSL;
+	osSemaphoreRelease(semAccLSM6DSLHandle);
+
+	acc->accADC[0] = (axes_LSM303AG.x + axes_LSM6DSL.x ) / 2;
+	acc->accADC[1] = (axes_LSM303AG.y + axes_LSM6DSL.y ) / 2;
+	acc->accADC[2] = (axes_LSM303AG.z + axes_LSM6DSL.z ) / 2;
 	return true;
 }
 
-static bool sensorMagInit(struct magDev_s *magdev) {
+static void sensorMagInit(struct magDev_s *mag) { }
+
+static bool sensorMagRead(struct magDev_s *mag) {
+	mag->magADC[0] = 2464;
+	mag->magADC[1] = -3257;
+	mag->magADC[2] = 1588;
 	return true;
 }
 
-static bool sensorMagRead(struct magDev_s *magdev, int16_t *data) {
-	data[0] = 2464;
-	data[1] = -3257;
-	data[2] = 1588;
-	return true;
+static void sensorBaroInit(struct baroDev_s *baro) {
+	baro->baroADC = 0;
 }
 
-
+static bool sensorBaroRead(struct baroDev_s *baro) {
+	//baro->baroADC = 12000;
+	osSemaphoreAcquire(semPressureHandle, osWaitForever );
+	baro->baroADC = LPS22HB_Pressure;
+	//LPS22HB_Pressure = pressure;
+	osSemaphoreRelease(semPressureHandle);
+	return true;
+}
 
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_startTaskControlMotor */
+/**
+  * @brief  Function implementing the tControlMotor thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_startTaskControlMotor */
+void startTaskControlMotor(void *argument)
+{
+  /* USER CODE BEGIN 5 */
+  /* Infinite loop */
+  for(;;)
+  {
+	gyroUpdate();
+	controlMotorUpdate();
+    osDelay(1);
+  }
+  /* USER CODE END 5 */
+}
+
+/* USER CODE BEGIN Header_startTaskAttitude */
+/**
+* @brief Function implementing the tAttitude thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_startTaskAttitude */
+void startTaskAttitude(void *argument)
+{
+  /* USER CODE BEGIN startTaskAttitude */
+  /* Infinite loop */
+  for(;;)
+  {
+    accUpdate();
+    magUpdate();
+    attitudeUpdate();
+    osDelay(1);
+  }
+  /* USER CODE END startTaskAttitude */
+}
+
+/* USER CODE BEGIN Header_startTaskAltitude */
+/**
+* @brief Function implementing the tAltitude thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_startTaskAltitude */
+void startTaskAltitude(void *argument)
+{
+  /* USER CODE BEGIN startTaskAltitude */
+  /* Infinite loop */
+  for(;;)
+  {
+    baroUpdate();
+    osDelay(1);
+  }
+  /* USER CODE END startTaskAltitude */
+}
+
+/* USER CODE BEGIN Header_StartTaskGetAccLSM6DSL */
+/**
+* @brief Function implementing the tGetAccLSM6DSL thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTaskGetAccLSM6DSL */
+void StartTaskGetAccLSM6DSL(void *argument)
+{
+  /* USER CODE BEGIN StartTaskGetAccLSM6DSL */
+  /* Infinite loop */
+  for(;;)
+  {
+	IKS01A2_MOTION_SENSOR_Axes_t axes;
+	IKS01A2_MOTION_SENSOR_GetAxes(IKS01A2_LSM6DSL_0, MOTION_ACCELERO, &axes);
+	osSemaphoreAcquire(semAccLSM6DSLHandle, osWaitForever );
+	axesAcc_LSM6DSL = axes;
+	osSemaphoreRelease(semAccLSM6DSLHandle);
+	osDelay(100);
+  }
+  /* USER CODE END StartTaskGetAccLSM6DSL */
+}
+
+/* USER CODE BEGIN Header_StartTaskGetAccLSM303AGR */
+/**
+* @brief Function implementing the tGetAccLSM303AG thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTaskGetAccLSM303AGR */
+void StartTaskGetAccLSM303AGR(void *argument)
+{
+  /* USER CODE BEGIN StartTaskGetAccLSM303AGR */
+  /* Infinite loop */
+  for(;;)
+  {
+	IKS01A2_MOTION_SENSOR_Axes_t axes;
+	IKS01A2_MOTION_SENSOR_GetAxes(IKS01A2_LSM303AGR_ACC_0, MOTION_ACCELERO, &axes);
+	osSemaphoreAcquire(semAccLSM303AGRHandle, osWaitForever );
+    axesAcc_LSM303AG = axes;
+	osSemaphoreRelease(semAccLSM303AGRHandle);
+	osDelay(100);
+  }
+  /* USER CODE END StartTaskGetAccLSM303AGR */
+}
+
+/* USER CODE BEGIN Header_StartTaskGetGyrLSM6DSL */
+/**
+* @brief Function implementing the tGetGyrLSM6DSL thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTaskGetGyrLSM6DSL */
+void StartTaskGetGyrLSM6DSL(void *argument)
+{
+  /* USER CODE BEGIN StartTaskGetGyrLSM6DSL */
+  /* Infinite loop */
+  for(;;)
+  {
+
+    osDelay(1);
+  }
+  /* USER CODE END StartTaskGetGyrLSM6DSL */
+}
+
+/* USER CODE BEGIN Header_StartTaskGetMagnetLSM303AGR */
+/**
+* @brief Function implementing the tGetMagnetLSM30 thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTaskGetMagnetLSM303AGR */
+void StartTaskGetMagnetLSM303AGR(void *argument)
+{
+  /* USER CODE BEGIN StartTaskGetMagnetLSM303AGR */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(10);
+  }
+  /* USER CODE END StartTaskGetMagnetLSM303AGR */
+}
+
+/* USER CODE BEGIN Header_StartTaskGetPressLPS22HB */
+/**
+* @brief Function implementing the tGetPressLPS22H thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTaskGetPressLPS22HB */
+void StartTaskGetPressLPS22HB(void *argument)
+{
+  /* USER CODE BEGIN StartTaskGetPressLPS22HB */
+  /* Infinite loop */
+  float pressure;
+  for(;;)
+  {
+	int res = IKS01A2_ENV_SENSOR_GetValue(IKS01A2_HTS221_0, ENV_PRESSURE,
+	     &pressure);
+	osSemaphoreAcquire(semPressureHandle, osWaitForever );
+	LPS22HB_Pressure = pressure;
+	osSemaphoreRelease(semPressureHandle);
+    osDelay(20);
+  }
+  /* USER CODE END StartTaskGetPressLPS22HB */
+}
+
+/* USER CODE BEGIN Header_StartTaskPrintUART */
+/**
+* @brief Function implementing the tPrintUART thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTaskPrintUART */
+void StartTaskPrintUART(void *argument)
+{
+  /* USER CODE BEGIN StartTaskPrintUART */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartTaskPrintUART */
+}
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM1 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM1) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.

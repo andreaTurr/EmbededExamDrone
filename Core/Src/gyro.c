@@ -6,9 +6,10 @@
  */
 
 #include "gyro.h"
-#include "timing.h"
+
 #include "debug.h"
 #include "filter.h"
+#include "timing.h"
 
 gyro_t gyro;
 uint8_t activePidLoopDenom = 1;
@@ -256,35 +257,14 @@ static void gyroUpdateSensor(gyroSensor_t *gyroSensor)
     gyroSensor->gyroDev.dataReady = false;
 
     // move 16-bit gyro data into 32-bit variables to avoid overflows in calculations
-    gyroSensor->gyroDev.gyroADC[X] = gyroSensor->gyroDev.gyroADCRaw[X] - gyroSensor->gyroDev.gyroZero[X];
-    gyroSensor->gyroDev.gyroADC[Y] = gyroSensor->gyroDev.gyroADCRaw[Y] - gyroSensor->gyroDev.gyroZero[Y];
-    gyroSensor->gyroDev.gyroADC[Z] = gyroSensor->gyroDev.gyroADCRaw[Z] - gyroSensor->gyroDev.gyroZero[Z];
+    gyroSensor->gyroDev.gyroADC[X] = gyroSensor->gyroDev.gyroADC[X] - gyroSensor->gyroDev.gyroZero[X];
+    gyroSensor->gyroDev.gyroADC[Y] = gyroSensor->gyroDev.gyroADC[Y] - gyroSensor->gyroDev.gyroZero[Y];
+    gyroSensor->gyroDev.gyroADC[Z] = gyroSensor->gyroDev.gyroADC[Z] - gyroSensor->gyroDev.gyroZero[Z];
     alignSensorViaRotation(gyroSensor->gyroDev.gyroADC, gyroSensor->gyroDev.gyroAlign);
 }
 
 
-void gyroUpdate(void) {
-	gyroUpdateSensor(&gyro.gyroSensor1);
-
-	gyro.gyroADC[X] = gyro.gyroSensor1.gyroDev.gyroADC[X] * gyro.gyroSensor1.gyroDev.scale;
-	gyro.gyroADC[Y] = gyro.gyroSensor1.gyroDev.gyroADC[Y] * gyro.gyroSensor1.gyroDev.scale;
-	gyro.gyroADC[Z] = gyro.gyroSensor1.gyroDev.gyroADC[Z] * gyro.gyroSensor1.gyroDev.scale;
-
-    if (gyro.downsampleFilterEnabled) {
-        // using gyro lowpass 2 filter for downsampling
-        gyro.sampleSum[X] = gyro.lowpass2FilterApplyFn((filter_t *)&gyro.lowpass2Filter[X], gyro.gyroADC[X]);
-        gyro.sampleSum[Y] = gyro.lowpass2FilterApplyFn((filter_t *)&gyro.lowpass2Filter[Y], gyro.gyroADC[Y]);
-        gyro.sampleSum[Z] = gyro.lowpass2FilterApplyFn((filter_t *)&gyro.lowpass2Filter[Z], gyro.gyroADC[Z]);
-    } else {
-        // using simple averaging for downsampling
-        gyro.sampleSum[X] += gyro.gyroADC[X];
-        gyro.sampleSum[Y] += gyro.gyroADC[Y];
-        gyro.sampleSum[Z] += gyro.gyroADC[Z];
-        gyro.sampleCount++;
-    }
-}
-
-void gyroFilter(void)
+static void gyroFilter(void)
 {
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // downsample the individual gyro samples
@@ -311,14 +291,36 @@ void gyroFilter(void)
     gyro.sampleCount = 0;
 }
 
-
-void gyroAccumulateMeasurements(void) {
+static void gyroAccumulateMeasurements(void) {
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // integrate using trapezium rule to avoid bias
         accumulatedMeasurements[axis] += 0.5f * (gyroPrevious[axis] + gyro.gyroADCf[axis]) * gyro.targetLooptime;
         gyroPrevious[axis] = gyro.gyroADCf[axis];
     }
     accumulatedMeasurementCount++;
+}
+
+void gyroUpdate(void) {
+	gyroUpdateSensor(&gyro.gyroSensor1);
+
+	gyro.gyroADC[X] = gyro.gyroSensor1.gyroDev.gyroADC[X] * gyro.gyroSensor1.gyroDev.scale;
+	gyro.gyroADC[Y] = gyro.gyroSensor1.gyroDev.gyroADC[Y] * gyro.gyroSensor1.gyroDev.scale;
+	gyro.gyroADC[Z] = gyro.gyroSensor1.gyroDev.gyroADC[Z] * gyro.gyroSensor1.gyroDev.scale;
+
+    if (gyro.downsampleFilterEnabled) {
+        // using gyro lowpass 2 filter for downsampling
+        gyro.sampleSum[X] = gyro.lowpass2FilterApplyFn((filter_t *)&gyro.lowpass2Filter[X], gyro.gyroADC[X]);
+        gyro.sampleSum[Y] = gyro.lowpass2FilterApplyFn((filter_t *)&gyro.lowpass2Filter[Y], gyro.gyroADC[Y]);
+        gyro.sampleSum[Z] = gyro.lowpass2FilterApplyFn((filter_t *)&gyro.lowpass2Filter[Z], gyro.gyroADC[Z]);
+    } else {
+        // using simple averaging for downsampling
+        gyro.sampleSum[X] += gyro.gyroADC[X];
+        gyro.sampleSum[Y] += gyro.gyroADC[Y];
+        gyro.sampleSum[Z] += gyro.gyroADC[Z];
+        gyro.sampleCount++;
+    }
+    gyroFilter();
+	gyroAccumulateMeasurements();
 }
 
 bool gyroGetAccumulationAverage(float *accumulationAverage)

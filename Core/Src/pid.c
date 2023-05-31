@@ -5,15 +5,15 @@
  *      Author: pietro
  */
 
+#include "pid.h"
+
 #include <math.h>
 
-#include "pid.h"
-#include "flight_dynamics.h"
 #include "flight_control.h"
 #include "flight_math.h"
-#include "reset.h"
 #include "gyro.h"
 #include "rc.h"
+#include "reset.h"
 
 uint8_t pidUpdateCounter = 0;
 static pidProfile_t pidProfile;

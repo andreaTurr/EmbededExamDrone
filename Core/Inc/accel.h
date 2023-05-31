@@ -37,7 +37,7 @@ typedef struct accDev_s {
     sensorAccInitFuncPtr initFn;                              // initialize function
     sensorAccReadFuncPtr readFn;                              // read 3 axis data function
     uint16_t acc_1G;
-    int16_t ADCRaw[XYZ_AXIS_COUNT];
+    float accADC[XYZ_AXIS_COUNT];
     mpuDetectionResult_t mpuDetectionResult;
     sensor_align_e accAlign;
     bool dataReady;

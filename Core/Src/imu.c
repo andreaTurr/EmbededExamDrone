@@ -11,15 +11,13 @@
 #include <stdint.h>
 #include <float.h>
 
-#include "flight_dynamics.h"
-#include "attitude.h"
+#include "accel.h"
 #include "bool.h"
-#include "timing.h"
+#include "flight_dynamics.h"
 #include "flight_math.h"
 #include "gyro.h"
-#include "pid.h"
-#include "accel.h"
 #include "mag.h"
+#include "timing.h"
 
 #define SPIN_RATE_LIMIT 20
 #define ATTITUDE_RESET_QUIET_TIME 250000   // 250ms - gyro quiet period after disarm before attitude reset

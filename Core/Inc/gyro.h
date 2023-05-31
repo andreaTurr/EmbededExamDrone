@@ -150,8 +150,6 @@ extern uint8_t activePidLoopDenom;
 
 void gyroInit(sensorGyroInitFuncPtr, sensorGyroReadFuncPtr);
 void gyroUpdate(void);
-void gyroFilter(void);
-void gyroAccumulateMeasurements(void);
 bool gyroGetAccumulationAverage(float *accumulationAverage);
 bool gyroOverflowDetected(void);
 

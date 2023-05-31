@@ -31,10 +31,11 @@ typedef struct mag_s {
 
 struct magDev_s;
 
-typedef bool (*sensorMagInitFuncPtr)(struct magDev_s *magdev);
-typedef bool (*sensorMagReadFuncPtr)(struct magDev_s *magdev, int16_t *data);
+typedef void (*sensorMagInitFuncPtr)(struct magDev_s *magdev);
+typedef bool (*sensorMagReadFuncPtr)(struct magDev_s *magdev);
 
 typedef struct magDev_s {
+	float magADC[XYZ_AXIS_COUNT];
     sensorMagInitFuncPtr init;                              // initialize function
     sensorMagReadFuncPtr read;                              // read 3 axis data function
     extiCallbackRec_t exti;

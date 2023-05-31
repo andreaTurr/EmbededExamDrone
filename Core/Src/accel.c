@@ -85,7 +85,7 @@ void accUpdate(void)
     acc.isAccelUpdatedAtLeastOnce = true;
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        acc.accADC[axis] = acc.dev.ADCRaw[axis];
+        acc.accADC[axis] = acc.dev.accADC[axis];
     }
 
     if (accelerationRuntime.accLpfCutHz) {

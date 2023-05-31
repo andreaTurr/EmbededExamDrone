@@ -153,6 +153,22 @@ typedef enum I2CDevice {
     I2CDEV_4,
 } I2CDevice;
 
+#define I2C_CFG_TO_DEV(x)   ((x) - 1)
+#define I2C_DEV_TO_CFG(x)   ((x) + 1)
+
+typedef enum SPIDevice {
+    SPIINVALID = -1,
+    SPIDEV_1   = 0,
+    SPIDEV_2,
+    SPIDEV_3,
+    SPIDEV_4,
+    SPIDEV_5,
+    SPIDEV_6
+} SPIDevice;
+
+#define SPI_CFG_TO_DEV(x)   ((x) - 1)
+#define SPI_DEV_TO_CFG(x)   ((x) + 1)
+
 struct busSegment_s;
 
 // Bus interface, independent of connected device

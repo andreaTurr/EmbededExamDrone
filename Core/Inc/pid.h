@@ -11,9 +11,9 @@
 #include <stdint.h>
 
 #include "bool.h"
+#include "filter.h"
 #include "flight_dynamics.h"
 #include "timing.h"
-#include "filter.h"
 
 #define PTERM_SCALE 0.032029f
 #define ITERM_SCALE 0.244381f

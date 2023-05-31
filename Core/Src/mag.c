@@ -16,9 +16,7 @@
 mag_t mag;
 magDev_t magDev;
 
-static int16_t magADCRaw[XYZ_AXIS_COUNT];
 static bool doneInit = false;
-
 
 typedef struct compassConfig_s {
     uint8_t mag_alignment;                  // mag alignment
@@ -109,13 +107,14 @@ void magInit(sensorMagInitFuncPtr initFn, sensorMagReadFuncPtr readFn) {
 
 void magUpdate(void)
 {
-    if (!magDev.read(&magDev, magADCRaw)) {
+    if (!magDev.read(&magDev)) {
         return;
     }
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        mag.magADC[axis] = magADCRaw[axis];
+    	mag.magADC[axis] = magDev.magADC[axis];
     }
+
     alignSensorViaRotation(mag.magADC, magDev.magAlignment);
 
     flightDynamicsTrims_t *magZero = &compassConfig.magZero;

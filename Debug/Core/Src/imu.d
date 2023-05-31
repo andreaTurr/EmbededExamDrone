@@ -1,9 +1,8 @@
-Core/Src/imu.o: ../Core/Src/imu.c ../Core/Inc/imu.h \
- ../Core/Inc/flight_dynamics.h ../Core/Inc/attitude.h ../Core/Inc/bool.h \
- ../Core/Inc/timing.h ../Core/Inc/flight_math.h \
- ../Core/Inc/flight_dynamics.h ../Core/Inc/gyro.h \
- ../Core/Inc/sensor_align.h ../Core/Inc/flight_math.h ../Core/Inc/comm.h \
- ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h \
+Core/Src/imu.o: ../Core/Src/imu.c ../Core/Inc/imu.h ../Core/Inc/accel.h \
+ ../Core/Inc/bool.h ../Core/Inc/flight_dynamics.h \
+ ../Core/Inc/flight_math.h ../Core/Inc/sensor_align.h \
+ ../Core/Inc/filter.h ../Core/Inc/dev.h ../Core/Inc/gyro.h \
+ ../Core/Inc/comm.h ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h \
  ../Core/Inc/stm32f7xx_hal_conf.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_rcc.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_def.h \
@@ -29,24 +28,25 @@ Core/Src/imu.o: ../Core/Src/imu.c ../Core/Inc/imu.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_i2c_ex.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pwr.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pwr_ex.h \
+ ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h \
+ ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_usb.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd_ex.h \
- ../Core/Inc/bool.h ../Core/Inc/basic_io.h ../Core/Inc/dev.h \
- ../Core/Inc/filter.h ../Core/Inc/pid.h ../Core/Inc/timing.h \
- ../Core/Inc/accel.h ../Core/Inc/gyro.h ../Core/Inc/mag.h
+ ../Core/Inc/basic_io.h ../Core/Inc/bool.h ../Core/Inc/flight_dynamics.h \
+ ../Core/Inc/flight_math.h ../Core/Inc/gyro.h ../Core/Inc/mag.h \
+ ../Core/Inc/timing.h
 ../Core/Inc/imu.h:
-../Core/Inc/flight_dynamics.h:
-../Core/Inc/attitude.h:
+../Core/Inc/accel.h:
 ../Core/Inc/bool.h:
-../Core/Inc/timing.h:
-../Core/Inc/flight_math.h:
 ../Core/Inc/flight_dynamics.h:
-../Core/Inc/gyro.h:
-../Core/Inc/sensor_align.h:
 ../Core/Inc/flight_math.h:
+../Core/Inc/sensor_align.h:
+../Core/Inc/filter.h:
+../Core/Inc/dev.h:
+../Core/Inc/gyro.h:
 ../Core/Inc/comm.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h:
 ../Core/Inc/stm32f7xx_hal_conf.h:
@@ -74,17 +74,17 @@ Core/Src/imu.o: ../Core/Src/imu.c ../Core/Inc/imu.h \
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_i2c_ex.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pwr.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pwr_ex.h:
+../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h:
+../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_usb.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd_ex.h:
-../Core/Inc/bool.h:
 ../Core/Inc/basic_io.h:
-../Core/Inc/dev.h:
-../Core/Inc/filter.h:
-../Core/Inc/pid.h:
-../Core/Inc/timing.h:
-../Core/Inc/accel.h:
+../Core/Inc/bool.h:
+../Core/Inc/flight_dynamics.h:
+../Core/Inc/flight_math.h:
 ../Core/Inc/gyro.h:
 ../Core/Inc/mag.h:
+../Core/Inc/timing.h:

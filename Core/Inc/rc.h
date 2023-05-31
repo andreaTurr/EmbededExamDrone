@@ -8,7 +8,6 @@
 #ifndef SRC_RC_H_
 #define SRC_RC_H_
 
-
 #define THROTTLE_BUFFER_MAX 20
 #define THROTTLE_DELTA_MS 100
 #define MAX_SUPPORTED_RC_CHANNEL_COUNT              18
@@ -53,7 +52,5 @@ typedef struct controlRateConfig_s {
     uint8_t quickRatesRcExpo;               // Sets expo on rc command for quick rates
     uint8_t levelExpo[2];                   // roll/pitch level mode expo
 } controlRateConfig_t;
-
-
 
 #endif /* SRC_RC_H_ */
