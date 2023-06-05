@@ -30,6 +30,8 @@
 #include "mag.h"
 #include "iks01a2_env_sensors.h"
 #include "iks01a2_motion_sensors.h"
+#include <stdio.h>
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -115,10 +117,10 @@ const osThreadAttr_t tPrintUART_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for semPressure */
-osSemaphoreId_t semPressureHandle;
-const osSemaphoreAttr_t semPressure_attributes = {
-  .name = "semPressure"
+/* Definitions for semPressLPS22HB */
+osSemaphoreId_t semPressLPS22HBHandle;
+const osSemaphoreAttr_t semPressLPS22HB_attributes = {
+  .name = "semPressLPS22HB"
 };
 /* Definitions for semAccLSM303AGR */
 osSemaphoreId_t semAccLSM303AGRHandle;
@@ -130,10 +132,22 @@ osSemaphoreId_t semAccLSM6DSLHandle;
 const osSemaphoreAttr_t semAccLSM6DSL_attributes = {
   .name = "semAccLSM6DSL"
 };
+/* Definitions for semMagnetLSM303AGR */
+osSemaphoreId_t semMagnetLSM303AGRHandle;
+const osSemaphoreAttr_t semMagnetLSM303AGR_attributes = {
+  .name = "semMagnetLSM303AGR"
+};
+/* Definitions for semGyrLSM6DSL */
+osSemaphoreId_t semGyrLSM6DSLHandle;
+const osSemaphoreAttr_t semGyrLSM6DSL_attributes = {
+  .name = "semGyrLSM6DSL"
+};
 /* USER CODE BEGIN PV */
-volatile float LPS22HB_Pressure;
+volatile float pressure_LPS22HB;
 volatile IKS01A2_MOTION_SENSOR_Axes_t axesAcc_LSM303AG;
 volatile IKS01A2_MOTION_SENSOR_Axes_t axesAcc_LSM6DSL;
+volatile IKS01A2_MOTION_SENSOR_Axes_t axesGyr_LSM6DSL;
+volatile IKS01A2_MOTION_SENSOR_Axes_t axesMag_LSM303AGR;
 
 /* USER CODE END PV */
 
@@ -165,7 +179,12 @@ static bool sensorBaroRead(struct baroDev_s *baro);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+int _write(int file, char *ptr, int len) {
+ for (int i = 0; i < len; ++i) {
+ ITM_SendChar(*ptr++);
+ }
+ return len;
+}
 /* USER CODE END 0 */
 
 /**
@@ -236,14 +255,20 @@ int main(void)
   /* USER CODE END RTOS_MUTEX */
 
   /* Create the semaphores(s) */
-  /* creation of semPressure */
-  semPressureHandle = osSemaphoreNew(1, 1, &semPressure_attributes);
+  /* creation of semPressLPS22HB */
+  semPressLPS22HBHandle = osSemaphoreNew(1, 1, &semPressLPS22HB_attributes);
 
   /* creation of semAccLSM303AGR */
   semAccLSM303AGRHandle = osSemaphoreNew(1, 1, &semAccLSM303AGR_attributes);
 
   /* creation of semAccLSM6DSL */
   semAccLSM6DSLHandle = osSemaphoreNew(1, 1, &semAccLSM6DSL_attributes);
+
+  /* creation of semMagnetLSM303AGR */
+  semMagnetLSM303AGRHandle = osSemaphoreNew(1, 1, &semMagnetLSM303AGR_attributes);
+
+  /* creation of semGyrLSM6DSL */
+  semGyrLSM6DSLHandle = osSemaphoreNew(1, 1, &semGyrLSM6DSL_attributes);
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
@@ -583,10 +608,10 @@ static void sensorBaroInit(struct baroDev_s *baro) {
 
 static bool sensorBaroRead(struct baroDev_s *baro) {
 	//baro->baroADC = 12000;
-	osSemaphoreAcquire(semPressureHandle, osWaitForever );
-	baro->baroADC = LPS22HB_Pressure;
+	osSemaphoreAcquire(semPressLPS22HBHandle, osWaitForever );
+	baro->baroADC = pressure_LPS22HB;
 	//LPS22HB_Pressure = pressure;
-	osSemaphoreRelease(semPressureHandle);
+	osSemaphoreRelease(semPressLPS22HBHandle);
 	return true;
 }
 
@@ -711,7 +736,11 @@ void StartTaskGetGyrLSM6DSL(void *argument)
   /* Infinite loop */
   for(;;)
   {
-
+	IKS01A2_MOTION_SENSOR_Axes_t axes;
+	IKS01A2_MOTION_SENSOR_GetAxes(IKS01A2_LSM303AGR_MAG_0, MOTION_GYRO, &axes);
+	osSemaphoreAcquire(semGyrLSM6DSLHandle, osWaitForever );
+	axesGyr_LSM6DSL = axes;
+	osSemaphoreRelease(semGyrLSM6DSLHandle);
     osDelay(1);
   }
   /* USER CODE END StartTaskGetGyrLSM6DSL */
@@ -730,6 +759,11 @@ void StartTaskGetMagnetLSM303AGR(void *argument)
   /* Infinite loop */
   for(;;)
   {
+	IKS01A2_MOTION_SENSOR_Axes_t axes;
+	IKS01A2_MOTION_SENSOR_GetAxes(IKS01A2_LSM303AGR_MAG_0, MOTION_MAGNETO, &axes);
+	osSemaphoreAcquire(semMagnetLSM303AGRHandle, osWaitForever );
+	axesMag_LSM303AGR = axes;
+	osSemaphoreRelease(semMagnetLSM303AGRHandle);
     osDelay(10);
   }
   /* USER CODE END StartTaskGetMagnetLSM303AGR */
@@ -749,11 +783,11 @@ void StartTaskGetPressLPS22HB(void *argument)
   float pressure;
   for(;;)
   {
-	int res = IKS01A2_ENV_SENSOR_GetValue(IKS01A2_HTS221_0, ENV_PRESSURE,
-	     &pressure);
-	osSemaphoreAcquire(semPressureHandle, osWaitForever );
-	LPS22HB_Pressure = pressure;
-	osSemaphoreRelease(semPressureHandle);
+	//int res =
+    IKS01A2_ENV_SENSOR_GetValue(IKS01A2_HTS221_0, ENV_PRESSURE, &pressure);
+	osSemaphoreAcquire(semPressLPS22HBHandle, osWaitForever );
+	pressure_LPS22HB = pressure;
+	osSemaphoreRelease(semPressLPS22HBHandle);
     osDelay(20);
   }
   /* USER CODE END StartTaskGetPressLPS22HB */
@@ -772,7 +806,11 @@ void StartTaskPrintUART(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	printf("Magnet: \n");
+	printf("x:%d\n", (int)axesMag_LSM303AGR.x);
+	printf("y:%d\n", (int)axesMag_LSM303AGR.y);
+	printf("z:%d\n", (int)axesMag_LSM303AGR.z);
+    osDelay(1000);
   }
   /* USER CODE END StartTaskPrintUART */
 }
