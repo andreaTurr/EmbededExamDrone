@@ -66,49 +66,49 @@ osThreadId_t tAttitudeHandle;
 const osThreadAttr_t tAttitude_attributes = {
   .name = "tAttitude",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal2,
+  .priority = (osPriority_t) osPriorityNormal3,
 };
 /* Definitions for tAltitude */
 osThreadId_t tAltitudeHandle;
 const osThreadAttr_t tAltitude_attributes = {
   .name = "tAltitude",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal3,
+  .priority = (osPriority_t) osPriorityNormal6,
 };
 /* Definitions for tGetAccLSM6DSL */
 osThreadId_t tGetAccLSM6DSLHandle;
 const osThreadAttr_t tGetAccLSM6DSL_attributes = {
   .name = "tGetAccLSM6DSL",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityNormal5,
 };
 /* Definitions for tGetAccLSM303AG */
 osThreadId_t tGetAccLSM303AGHandle;
 const osThreadAttr_t tGetAccLSM303AG_attributes = {
   .name = "tGetAccLSM303AG",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityNormal4,
 };
 /* Definitions for tGetGyrLSM6DSL */
 osThreadId_t tGetGyrLSM6DSLHandle;
 const osThreadAttr_t tGetGyrLSM6DSL_attributes = {
   .name = "tGetGyrLSM6DSL",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityNormal2,
 };
 /* Definitions for tGetMagnetLSM30 */
 osThreadId_t tGetMagnetLSM30Handle;
 const osThreadAttr_t tGetMagnetLSM30_attributes = {
   .name = "tGetMagnetLSM30",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityAboveNormal,
 };
 /* Definitions for tGetPressLPS22H */
 osThreadId_t tGetPressLPS22HHandle;
 const osThreadAttr_t tGetPressLPS22H_attributes = {
   .name = "tGetPressLPS22H",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityNormal7,
 };
 /* Definitions for tPrintUART */
 osThreadId_t tPrintUARTHandle;
@@ -141,6 +141,11 @@ const osSemaphoreAttr_t semMagnetLSM303AGR_attributes = {
 osSemaphoreId_t semGyrLSM6DSLHandle;
 const osSemaphoreAttr_t semGyrLSM6DSL_attributes = {
   .name = "semGyrLSM6DSL"
+};
+/* Definitions for semI2CInUse */
+osSemaphoreId_t semI2CInUseHandle;
+const osSemaphoreAttr_t semI2CInUse_attributes = {
+  .name = "semI2CInUse"
 };
 /* USER CODE BEGIN PV */
 volatile float pressure_LPS22HB;
@@ -269,6 +274,9 @@ int main(void)
 
   /* creation of semGyrLSM6DSL */
   semGyrLSM6DSLHandle = osSemaphoreNew(1, 1, &semGyrLSM6DSL_attributes);
+
+  /* creation of semI2CInUse */
+  semI2CInUseHandle = osSemaphoreNew(1, 1, &semI2CInUse_attributes);
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
@@ -566,9 +574,14 @@ static void MX_GPIO_Init(void)
 static void sensorGyroInit(struct gyroDev_s *gyro) { }
 
 static bool sensorGyroRead(struct gyroDev_s *gyro) {
-	gyro->gyroADC[0] = 0;
-	gyro->gyroADC[1] = -12345;
-	gyro->gyroADC[2] = -28414;
+	IKS01A2_MOTION_SENSOR_Axes_t axes_LSM6DSL;
+	//LSM303AG sensor accelerometer
+	osSemaphoreAcquire(semGyrLSM6DSLHandle, osWaitForever );
+	axes_LSM6DSL = axesGyr_LSM6DSL;
+	osSemaphoreRelease(semGyrLSM6DSLHandle);
+	gyro->gyroADC[0] = axes_LSM6DSL.x;
+	gyro->gyroADC[1] = axes_LSM6DSL.y;
+	gyro->gyroADC[2] = axes_LSM6DSL.z;
 	return true;
 }
 
@@ -596,9 +609,15 @@ static bool sensorAccRead(struct accDev_s *acc) {
 static void sensorMagInit(struct magDev_s *mag) { }
 
 static bool sensorMagRead(struct magDev_s *mag) {
-	mag->magADC[0] = 2464;
-	mag->magADC[1] = -3257;
-	mag->magADC[2] = 1588;
+	//LSM303AGR sensor magnetometer
+	IKS01A2_MOTION_SENSOR_Axes_t axes_LSM303AGR;
+	osSemaphoreAcquire(semMagnetLSM303AGRHandle, osWaitForever );
+	axes_LSM303AGR = axesMag_LSM303AGR;
+	osSemaphoreRelease(semMagnetLSM303AGRHandle);
+
+	mag->magADC[0] = axes_LSM303AGR.x;
+	mag->magADC[1] = axes_LSM303AGR.y;
+	mag->magADC[2] = axes_LSM303AGR.z;
 	return true;
 }
 
@@ -691,7 +710,10 @@ void StartTaskGetAccLSM6DSL(void *argument)
   for(;;)
   {
 	IKS01A2_MOTION_SENSOR_Axes_t axes;
+	osSemaphoreAcquire(semI2CInUseHandle, osWaitForever);
 	IKS01A2_MOTION_SENSOR_GetAxes(IKS01A2_LSM6DSL_0, MOTION_ACCELERO, &axes);
+	osSemaphoreRelease(semI2CInUseHandle);
+
 	osSemaphoreAcquire(semAccLSM6DSLHandle, osWaitForever );
 	axesAcc_LSM6DSL = axes;
 	osSemaphoreRelease(semAccLSM6DSLHandle);
@@ -714,7 +736,10 @@ void StartTaskGetAccLSM303AGR(void *argument)
   for(;;)
   {
 	IKS01A2_MOTION_SENSOR_Axes_t axes;
+	osSemaphoreAcquire(semI2CInUseHandle, osWaitForever);
 	IKS01A2_MOTION_SENSOR_GetAxes(IKS01A2_LSM303AGR_ACC_0, MOTION_ACCELERO, &axes);
+	osSemaphoreRelease(semI2CInUseHandle);
+
 	osSemaphoreAcquire(semAccLSM303AGRHandle, osWaitForever );
     axesAcc_LSM303AG = axes;
 	osSemaphoreRelease(semAccLSM303AGRHandle);
@@ -737,11 +762,14 @@ void StartTaskGetGyrLSM6DSL(void *argument)
   for(;;)
   {
 	IKS01A2_MOTION_SENSOR_Axes_t axes;
+	osSemaphoreAcquire(semI2CInUseHandle, osWaitForever);
 	IKS01A2_MOTION_SENSOR_GetAxes(IKS01A2_LSM303AGR_MAG_0, MOTION_GYRO, &axes);
+	osSemaphoreRelease(semI2CInUseHandle);
+
 	osSemaphoreAcquire(semGyrLSM6DSLHandle, osWaitForever );
 	axesGyr_LSM6DSL = axes;
 	osSemaphoreRelease(semGyrLSM6DSLHandle);
-    osDelay(1);
+    osDelay(500);
   }
   /* USER CODE END StartTaskGetGyrLSM6DSL */
 }
@@ -760,7 +788,10 @@ void StartTaskGetMagnetLSM303AGR(void *argument)
   for(;;)
   {
 	IKS01A2_MOTION_SENSOR_Axes_t axes;
+	osSemaphoreAcquire(semI2CInUseHandle, osWaitForever);
 	IKS01A2_MOTION_SENSOR_GetAxes(IKS01A2_LSM303AGR_MAG_0, MOTION_MAGNETO, &axes);
+	osSemaphoreRelease(semI2CInUseHandle);
+
 	osSemaphoreAcquire(semMagnetLSM303AGRHandle, osWaitForever );
 	axesMag_LSM303AGR = axes;
 	osSemaphoreRelease(semMagnetLSM303AGRHandle);
@@ -780,11 +811,14 @@ void StartTaskGetPressLPS22HB(void *argument)
 {
   /* USER CODE BEGIN StartTaskGetPressLPS22HB */
   /* Infinite loop */
-  float pressure;
+
   for(;;)
   {
-	//int res =
-    IKS01A2_ENV_SENSOR_GetValue(IKS01A2_HTS221_0, ENV_PRESSURE, &pressure);
+	float pressure;
+	osSemaphoreAcquire(semI2CInUseHandle, osWaitForever);
+	IKS01A2_ENV_SENSOR_GetValue(IKS01A2_HTS221_0, ENV_PRESSURE, &pressure);
+	osSemaphoreRelease(semI2CInUseHandle);
+
 	osSemaphoreAcquire(semPressLPS22HBHandle, osWaitForever );
 	pressure_LPS22HB = pressure;
 	osSemaphoreRelease(semPressLPS22HBHandle);
@@ -810,7 +844,7 @@ void StartTaskPrintUART(void *argument)
 	printf("x:%d\n", (int)axesMag_LSM303AGR.x);
 	printf("y:%d\n", (int)axesMag_LSM303AGR.y);
 	printf("z:%d\n", (int)axesMag_LSM303AGR.z);
-    osDelay(1000);
+    osDelay(2000);
   }
   /* USER CODE END StartTaskPrintUART */
 }

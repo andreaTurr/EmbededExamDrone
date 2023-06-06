@@ -2,10 +2,10 @@
 CAD.formats=
 CAD.pinconfig=
 CAD.provider=
-FREERTOS.BinarySemaphores01=semPressLPS22HB,Dynamic,NULL;semAccLSM303AGR,Dynamic,NULL;semAccLSM6DSL,Dynamic,NULL;semMagnetLSM303AGR,Dynamic,NULL;semGyrLSM6DSL,Dynamic,NULL
+FREERTOS.BinarySemaphores01=semPressLPS22HB,Dynamic,NULL;semAccLSM303AGR,Dynamic,NULL;semAccLSM6DSL,Dynamic,NULL;semMagnetLSM303AGR,Dynamic,NULL;semGyrLSM6DSL,Dynamic,NULL;semI2CInUse,Dynamic,NULL
 FREERTOS.FootprintOK=true
 FREERTOS.IPParameters=Tasks01,configENABLE_FPU,FootprintOK,configUSE_NEWLIB_REENTRANT,BinarySemaphores01
-FREERTOS.Tasks01=tControlMotor,25,128,startTaskControlMotor,Default,NULL,Dynamic,NULL,NULL;tAttitude,26,128,startTaskAttitude,Default,NULL,Dynamic,NULL,NULL;tAltitude,27,128,startTaskAltitude,Default,NULL,Dynamic,NULL,NULL;tGetAccLSM6DSL,24,128,StartTaskGetAccLSM6DSL,Default,NULL,Dynamic,NULL,NULL;tGetAccLSM303AG,24,128,StartTaskGetAccLSM303AGR,Default,NULL,Dynamic,NULL,NULL;tGetGyrLSM6DSL,24,128,StartTaskGetGyrLSM6DSL,Default,NULL,Dynamic,NULL,NULL;tGetMagnetLSM30,24,128,StartTaskGetMagnetLSM303AGR,Default,NULL,Dynamic,NULL,NULL;tGetPressLPS22H,24,128,StartTaskGetPressLPS22HB,Default,NULL,Dynamic,NULL,NULL;tPrintUART,24,128,StartTaskPrintUART,Default,NULL,Dynamic,NULL,NULL
+FREERTOS.Tasks01=tControlMotor,25,128,startTaskControlMotor,Default,NULL,Dynamic,NULL,NULL;tAttitude,27,128,startTaskAttitude,Default,NULL,Dynamic,NULL,NULL;tAltitude,30,128,startTaskAltitude,Default,NULL,Dynamic,NULL,NULL;tGetAccLSM6DSL,29,128,StartTaskGetAccLSM6DSL,Default,NULL,Dynamic,NULL,NULL;tGetAccLSM303AG,28,128,StartTaskGetAccLSM303AGR,Default,NULL,Dynamic,NULL,NULL;tGetGyrLSM6DSL,26,128,StartTaskGetGyrLSM6DSL,Default,NULL,Dynamic,NULL,NULL;tGetMagnetLSM30,32,128,StartTaskGetMagnetLSM303AGR,Default,NULL,Dynamic,NULL,NULL;tGetPressLPS22H,31,128,StartTaskGetPressLPS22HB,Default,NULL,Dynamic,NULL,NULL;tPrintUART,24,128,StartTaskPrintUART,Default,NULL,Dynamic,NULL,NULL
 FREERTOS.configENABLE_FPU=1
 FREERTOS.configUSE_NEWLIB_REENTRANT=1
 File.Version=6
