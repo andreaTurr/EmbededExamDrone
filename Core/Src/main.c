@@ -837,13 +837,57 @@ void StartTaskGetPressLPS22HB(void *argument)
 void StartTaskPrintUART(void *argument)
 {
   /* USER CODE BEGIN StartTaskPrintUART */
+	UART_HandleTypeDef huart;
+	HAL_UART_Init(huart);
   /* Infinite loop */
   for(;;)
   {
-	printf("Magnet: \n");
-	printf("x:%d\n", (int)axesMag_LSM303AGR.x);
-	printf("y:%d\n", (int)axesMag_LSM303AGR.y);
-	printf("z:%d\n", (int)axesMag_LSM303AGR.z);
+	// aquisizione dati giroscopio in mutua esclusione e stampa
+	IKS01A2_MOTION_SENSOR_Axes_t axes_gyro;
+	osSemaphoreAcquire(semGyrLSM6DSLHandle, osWaitForever );
+	axes_gyro = axesGyr_LSM6DSL;
+	osSemaphoreRelease(semGyrLSM6DSLHandle);
+	printf("Giroscopio:x:%d, y:%d, z:%d\n", (int)axes_gyro.x, (int)axes_gyro.y, (int)axes_gyro.z);
+
+
+	// aquisizione dati accelerometri in mutua esclusione e stampa
+	IKS01A2_MOTION_SENSOR_Axes_t axes_ACC_LSM303AG;
+	IKS01A2_MOTION_SENSOR_Axes_t axes_ACC_LSM6DSL;
+	//LSM303AG sensor accelerometer
+	osSemaphoreAcquire(semAccLSM303AGRHandle, osWaitForever );
+	axes_ACC_LSM303AG = axesAcc_LSM303AG;
+	osSemaphoreRelease(semAccLSM303AGRHandle);
+	//LSM303AG sensor accelerometer
+	osSemaphoreAcquire(semAccLSM6DSLHandle, osWaitForever );
+	axes_ACC_LSM6DSL = axesAcc_LSM6DSL;
+	osSemaphoreRelease(semAccLSM6DSLHandle);
+	printf("Accelerometro LSM303AGR: x:%d, y:%d, z:%d\n", (int)axes_ACC_LSM303AG.x, (int)axes_ACC_LSM303AG.y, (int)axes_ACC_LSM303AG.z);
+	printf("Accelerometro LSM6DSL: x:%d, y:%d, z:%d\n", (int)axes_ACC_LSM6DSL.x, (int)axes_ACC_LSM6DSL.y, (int)axes_ACC_LSM6DSL.z);
+	//stampa della media
+	printf("Accelerometro media: x:%d, y:%d, z:%d\n",
+			(int)((axes_ACC_LSM303AG.x + axes_ACC_LSM6DSL.x )/2) ,
+			(int)((axes_ACC_LSM303AG.y + axes_ACC_LSM6DSL.y )/2) ,
+			(int)((axes_ACC_LSM303AG.z + axes_ACC_LSM6DSL.z )/2) );
+
+
+	// aquisizione dati del magnetometro in mutua esclusione e stampa
+	IKS01A2_MOTION_SENSOR_Axes_t axes_MAG_LSM303AGR;
+	osSemaphoreAcquire(semMagnetLSM303AGRHandle, osWaitForever );
+	axes_MAG_LSM303AGR = axesMag_LSM303AGR;
+	osSemaphoreRelease(semMagnetLSM303AGRHandle);
+	printf("Magnetometro: x:%d, y:%d, z:%d\n", (int)axes_MAG_LSM303AGR.x, (int)axes_MAG_LSM303AGR.y, (int)axes_MAG_LSM303AGR.z);
+
+
+	// aquisizione dati del barometro in mutua esclusione e stampa
+	int pressure;
+	osSemaphoreAcquire(semPressLPS22HBHandle, osWaitForever );
+	pressure = (int)pressure_LPS22HB;
+	//LPS22HB_Pressure = pressure;
+	osSemaphoreRelease(semPressLPS22HBHandle);
+	printf("Pressione: %d", pressure);
+
+
+	printf("");
     osDelay(2000);
   }
   /* USER CODE END StartTaskPrintUART */
