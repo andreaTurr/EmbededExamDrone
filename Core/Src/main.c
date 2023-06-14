@@ -180,18 +180,20 @@ static void sensorMagInit(struct magDev_s *mag);
 static bool sensorMagRead(struct magDev_s *mag);
 static void sensorBaroInit(struct baroDev_s *baro);
 static bool sensorBaroRead(struct baroDev_s *baro);
-UART_HandleTypeDef huart;
+static char pBuf[1000];
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 int _write(int file, char *ptr, int len) {
+
  for (int i = 0; i < len; ++i) {
- //ITM_SendChar(*ptr++);
-	 const unsigned char* letter = ptr;
-	 HAL_UART_Transmit_IT(&huart, letter, 1);
-	 ptr++;
+	 ITM_SendChar(*ptr++);
+	 //const unsigned char* letter = ptr;
+	 //HAL_UART_Transmit(&huart3, (const uint8_t *)ptr++, 1, 1);
+	 ///ptr++;
  }
+ //HAL_UART_Transmit_IT(&huart3, (const unsigned char *)ptr, len);
  return len;
 }
 /* USER CODE END 0 */
@@ -213,7 +215,7 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
-  HAL_UART_Init(&huart);
+  //HAL_UART_Init(&huart3);
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -848,11 +850,14 @@ void StartTaskPrintUART(void *argument)
   for(;;)
   {
 	// aquisizione dati giroscopio in mutua esclusione e stampa
+
+	int iiSize = 0;
+	memset(pBuf, 0x00, 1000);
 	IKS01A2_MOTION_SENSOR_Axes_t axes_gyro;
 	osSemaphoreAcquire(semGyrLSM6DSLHandle, osWaitForever );
 	axes_gyro = axesGyr_LSM6DSL;
 	osSemaphoreRelease(semGyrLSM6DSLHandle);
-	printf("Giroscopio: x:%d, y:%d, z:%d\n", (int)axes_gyro.x, (int)axes_gyro.y, (int)axes_gyro.z);
+	iiSize += sprintf(&pBuf[iiSize], "Giroscopio: x:%d, y:%d, z:%d\n", (int)axes_gyro.x, (int)axes_gyro.y, (int)axes_gyro.z);
 
 
 	// aquisizione dati accelerometri in mutua esclusione e stampa
@@ -866,10 +871,10 @@ void StartTaskPrintUART(void *argument)
 	osSemaphoreAcquire(semAccLSM6DSLHandle, osWaitForever );
 	axes_ACC_LSM6DSL = axesAcc_LSM6DSL;
 	osSemaphoreRelease(semAccLSM6DSLHandle);
-	printf("Accelerometro LSM303AGR: x:%d, y:%d, z:%d\n", (int)axes_ACC_LSM303AG.x, (int)axes_ACC_LSM303AG.y, (int)axes_ACC_LSM303AG.z);
-	printf("Accelerometro LSM6DSL: x:%d, y:%d, z:%d\n", (int)axes_ACC_LSM6DSL.x, (int)axes_ACC_LSM6DSL.y, (int)axes_ACC_LSM6DSL.z);
+	iiSize += sprintf(&pBuf[iiSize], "Accelerometro LSM303AGR: x:%d, y:%d, z:%d\n", (int)axes_ACC_LSM303AG.x, (int)axes_ACC_LSM303AG.y, (int)axes_ACC_LSM303AG.z);
+	iiSize += sprintf(&pBuf[iiSize], "Accelerometro LSM6DSL: x:%d, y:%d, z:%d\n", (int)axes_ACC_LSM6DSL.x, (int)axes_ACC_LSM6DSL.y, (int)axes_ACC_LSM6DSL.z);
 	//stampa della media
-	printf("Accelerometro media: x:%d, y:%d, z:%d\n",
+	iiSize += sprintf(&pBuf[iiSize], "Accelerometro media: x:%d, y:%d, z:%d\n",
 			(int)((axes_ACC_LSM303AG.x + axes_ACC_LSM6DSL.x )/2) ,
 			(int)((axes_ACC_LSM303AG.y + axes_ACC_LSM6DSL.y )/2) ,
 			(int)((axes_ACC_LSM303AG.z + axes_ACC_LSM6DSL.z )/2) );
@@ -880,7 +885,7 @@ void StartTaskPrintUART(void *argument)
 	osSemaphoreAcquire(semMagnetLSM303AGRHandle, osWaitForever );
 	axes_MAG_LSM303AGR = axesMag_LSM303AGR;
 	osSemaphoreRelease(semMagnetLSM303AGRHandle);
-	printf("Magnetometro: x:%d, y:%d, z:%d\n", (int)axes_MAG_LSM303AGR.x, (int)axes_MAG_LSM303AGR.y, (int)axes_MAG_LSM303AGR.z);
+	iiSize += sprintf(&pBuf[iiSize], "Magnetometro: x:%d, y:%d, z:%d\n", (int)axes_MAG_LSM303AGR.x, (int)axes_MAG_LSM303AGR.y, (int)axes_MAG_LSM303AGR.z);
 
 
 	// aquisizione dati del barometro in mutua esclusione e stampa
@@ -889,8 +894,10 @@ void StartTaskPrintUART(void *argument)
 	pressure = (int)pressure_LPS22HB;
 	//LPS22HB_Pressure = pressure;
 	osSemaphoreRelease(semPressLPS22HBHandle);
-	printf("Pressione: %d\n\n", pressure);
+	iiSize += sprintf(&pBuf[iiSize], "Pressione: %d\n\n", pressure);
 
+	HAL_UART_Transmit(&huart3, (const uint8_t *)pBuf, iiSize, 1000);
+	//printf(pBuf);
 
 	//printf("");
     osDelay(2000);
