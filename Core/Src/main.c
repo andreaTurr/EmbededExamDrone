@@ -159,8 +159,8 @@ volatile IKS01A2_MOTION_SENSOR_Axes_t axesMag_LSM303AGR;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_USART3_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
+static void MX_USART3_UART_Init(void);
 void startTaskControlMotor(void *argument);
 void startTaskAttitude(void *argument);
 void startTaskAltitude(void *argument);
@@ -180,13 +180,17 @@ static void sensorMagInit(struct magDev_s *mag);
 static bool sensorMagRead(struct magDev_s *mag);
 static void sensorBaroInit(struct baroDev_s *baro);
 static bool sensorBaroRead(struct baroDev_s *baro);
+UART_HandleTypeDef huart;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 int _write(int file, char *ptr, int len) {
  for (int i = 0; i < len; ++i) {
- ITM_SendChar(*ptr++);
+ //ITM_SendChar(*ptr++);
+	 const unsigned char* letter = ptr;
+	 HAL_UART_Transmit_IT(&huart, letter, 1);
+	 ptr++;
  }
  return len;
 }
@@ -209,6 +213,7 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
+  HAL_UART_Init(&huart);
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -220,8 +225,8 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART3_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   /* initialization of control task */
   gyroInit(sensorGyroInit, sensorGyroRead);
@@ -651,7 +656,7 @@ void startTaskControlMotor(void *argument)
   {
 	gyroUpdate();
 	controlMotorUpdate();
-    osDelay(1);
+    osDelay(500);
   }
   /* USER CODE END 5 */
 }
@@ -672,7 +677,7 @@ void startTaskAttitude(void *argument)
     accUpdate();
     magUpdate();
     attitudeUpdate();
-    osDelay(1);
+    osDelay(100);
   }
   /* USER CODE END startTaskAttitude */
 }
@@ -691,7 +696,7 @@ void startTaskAltitude(void *argument)
   for(;;)
   {
     baroUpdate();
-    osDelay(1);
+    osDelay(40);
   }
   /* USER CODE END startTaskAltitude */
 }
@@ -763,7 +768,7 @@ void StartTaskGetGyrLSM6DSL(void *argument)
   {
 	IKS01A2_MOTION_SENSOR_Axes_t axes;
 	osSemaphoreAcquire(semI2CInUseHandle, osWaitForever);
-	IKS01A2_MOTION_SENSOR_GetAxes(IKS01A2_LSM303AGR_MAG_0, MOTION_GYRO, &axes);
+	IKS01A2_MOTION_SENSOR_GetAxes(IKS01A2_LSM6DSL_0, MOTION_GYRO, &axes);
 	osSemaphoreRelease(semI2CInUseHandle);
 
 	osSemaphoreAcquire(semGyrLSM6DSLHandle, osWaitForever );
@@ -816,7 +821,7 @@ void StartTaskGetPressLPS22HB(void *argument)
   {
 	float pressure;
 	osSemaphoreAcquire(semI2CInUseHandle, osWaitForever);
-	IKS01A2_ENV_SENSOR_GetValue(IKS01A2_HTS221_0, ENV_PRESSURE, &pressure);
+	IKS01A2_ENV_SENSOR_GetValue(IKS01A2_LPS22HB_0, ENV_PRESSURE, &pressure);
 	osSemaphoreRelease(semI2CInUseHandle);
 
 	osSemaphoreAcquire(semPressLPS22HBHandle, osWaitForever );
@@ -837,8 +842,8 @@ void StartTaskGetPressLPS22HB(void *argument)
 void StartTaskPrintUART(void *argument)
 {
   /* USER CODE BEGIN StartTaskPrintUART */
-	UART_HandleTypeDef huart;
-	HAL_UART_Init(huart);
+
+
   /* Infinite loop */
   for(;;)
   {
@@ -847,7 +852,7 @@ void StartTaskPrintUART(void *argument)
 	osSemaphoreAcquire(semGyrLSM6DSLHandle, osWaitForever );
 	axes_gyro = axesGyr_LSM6DSL;
 	osSemaphoreRelease(semGyrLSM6DSLHandle);
-	printf("Giroscopio:x:%d, y:%d, z:%d\n", (int)axes_gyro.x, (int)axes_gyro.y, (int)axes_gyro.z);
+	printf("Giroscopio: x:%d, y:%d, z:%d\n", (int)axes_gyro.x, (int)axes_gyro.y, (int)axes_gyro.z);
 
 
 	// aquisizione dati accelerometri in mutua esclusione e stampa
@@ -884,10 +889,10 @@ void StartTaskPrintUART(void *argument)
 	pressure = (int)pressure_LPS22HB;
 	//LPS22HB_Pressure = pressure;
 	osSemaphoreRelease(semPressLPS22HBHandle);
-	printf("Pressione: %d", pressure);
+	printf("Pressione: %d\n\n", pressure);
 
 
-	printf("");
+	//printf("");
     osDelay(2000);
   }
   /* USER CODE END StartTaskPrintUART */
